@@ -113,7 +113,7 @@ def do_translation_loop():
         target_language_code='ja-JP')
 
     config = media.StreamingTranslateSpeechConfig(
-        audio_config=speech_config, single_utterance=False)
+        audio_config=speech_config, single_utterance=True)
 
     # The first request contains the configuration.
     # Note that audio_content is explicitly set to None.
