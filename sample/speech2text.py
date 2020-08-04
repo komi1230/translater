@@ -86,6 +86,16 @@ def translate(text, source="ja", target="en"):
     res = requests.get(URL).json()
 
     return res["text"]
+
+def send_zoom(text):
+    API_URL = "https://us04wmcc.zoom.us/closedcaption?id=71838332993&ns=S29taW5hbWkgWXVzdWtlLidzIFpvb20gTWVldGlu&expire=86400&sparams=id%2Cns%2Cexpire&signature=DlbzZzfFmn7kJ0ciEvwoMPKuLPuD-BDPEg4utbcCPPQ.EwEAAAFzt7BbOQABUYAYOXI0Y0Jnek8xKzRBSW9hK2NMZWRJZz09QHhoRGJjbER0dzJLRjZjcVVPcEhEUzdFZitlaGl0U053eTRVS0oxTS9DbW5WODVkNy9rcHZQN0FpNlo2UlBPSXo"
+    API_URL += "&seq=41"
+    API_URL += "&lang=en-US"
+
+    headers={'Content-Type': 'text/plain'}
+    res = requests.post(API_URL, text.encode("utf-8"), headers=headers)
+    
+    return res
     
 
 def listen_print_loop(responses):
@@ -140,7 +150,10 @@ def listen_print_loop(responses):
             print(transcript + overwrite_chars)
 
             text += transcript + overwrite_chars
-            print("Translated: ", translate(text))
+            
+            translated_text = translate(text)
+            print("Translated: ", translated_text)
+            print("Zoom response: ", send_zoom(translated_text))
 
             # Exit recognition if any of the transcribed phrases could be
             # one of our keywords.
