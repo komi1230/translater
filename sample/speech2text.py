@@ -87,9 +87,9 @@ def translate(text, source="ja", target="en"):
 
     return res["text"]
 
-def send_zoom(text):
-    API_URL = "https://us04wmcc.zoom.us/closedcaption?id=71838332993&ns=S29taW5hbWkgWXVzdWtlLidzIFpvb20gTWVldGlu&expire=86400&sparams=id%2Cns%2Cexpire&signature=DlbzZzfFmn7kJ0ciEvwoMPKuLPuD-BDPEg4utbcCPPQ.EwEAAAFzt7BbOQABUYAYOXI0Y0Jnek8xKzRBSW9hK2NMZWRJZz09QHhoRGJjbER0dzJLRjZjcVVPcEhEUzdFZitlaGl0U053eTRVS0oxTS9DbW5WODVkNy9rcHZQN0FpNlo2UlBPSXo"
-    API_URL += "&seq=41"
+def send_zoom(text, seq):
+    API_URL = "https://us04wmcc.zoom.us/closedcaption?id=74300815564&ns=S29taW5hbWkgWXVzdWtlLidzIFpvb20gTWVldGlu&expire=86400&sparams=id%2Cns%2Cexpire&signature=WZtb-Pg9PGWWXU7yqQqryjJbia6raDEyBqh8RoK-bKA.EwEAAAFz3JQcJwABUYAYL01FQmhvNWlxUHpsaHRXT0srT2RLdz09QHhoRGJjbER0dzJLRjZjcVVPcEhEUzdFZitlaGl0U053eTRVS0oxTS9DbW5WODVkNy9rcHZQN0FpNlo2UlBPSXo"
+    API_URL += "&seq={}".format(seq)
     API_URL += "&lang=en-US"
 
     headers={'Content-Type': 'text/plain'}
@@ -114,6 +114,7 @@ def listen_print_loop(responses):
     final one, print a newline to preserve the finalized transcription.
     """
     num_chars_printed = 0
+    seq = 0
     for response in responses:
         if not response.results:
             continue
@@ -153,7 +154,9 @@ def listen_print_loop(responses):
             
             translated_text = translate(text)
             print("Translated: ", translated_text)
-            print("Zoom response: ", send_zoom(translated_text))
+            print("Zoom response: ", send_zoom(translated_text, seq))
+            
+            seq += 1
 
             # Exit recognition if any of the transcribed phrases could be
             # one of our keywords.
