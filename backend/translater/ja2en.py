@@ -8,97 +8,17 @@ from google.cloud.speech import enums
 from google.cloud.speech import types
 import pyaudio
 import requests
-from six.moves import queue
+
+from microphone import MicrophoneStream
+from send_zoom import send_zoom
+from translate import translate
 
 # Audio recording parameters
 RATE = 16000
 CHUNK = int(RATE / 10)  # 100ms
-
-class MicrophoneStream(object):
-    """Opens a recording stream as a generator yielding the audio chunks."""
-    def __init__(self, rate, chunk):
-        self._rate = rate
-        self._chunk = chunk
-
-        # Create a thread-safe buffer of audio data
-        self._buff = queue.Queue()
-        self.closed = True
-
-    def __enter__(self):
-        self._audio_interface = pyaudio.PyAudio()
-        self._audio_stream = self._audio_interface.open(
-            format=pyaudio.paInt16,
-            # The API currently only supports 1-channel (mono) audio
-            # https://goo.gl/z757pE
-            channels=1, rate=self._rate,
-            input=True, frames_per_buffer=self._chunk,
-            # Run the audio stream asynchronously to fill the buffer object.
-            # This is necessary so that the input device's buffer doesn't
-            # overflow while the calling thread makes network requests, etc.
-            stream_callback=self._fill_buffer,
-        )
-
-        self.closed = False
-
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self._audio_stream.stop_stream()
-        self._audio_stream.close()
-        self.closed = True
-        # Signal the generator to terminate so that the client's
-        # streaming_recognize method will not block the process termination.
-        self._buff.put(None)
-        self._audio_interface.terminate()
-
-    def _fill_buffer(self, in_data, frame_count, time_info, status_flags):
-        """Continuously collect data from the audio stream, into the buffer."""
-        self._buff.put(in_data)
-        return None, pyaudio.paContinue
-
-    def generator(self):
-        while not self.closed:
-            # Use a blocking get() to ensure there's at least one chunk of
-            # data, and stop iteration if the chunk is None, indicating the
-            # end of the audio stream.
-            chunk = self._buff.get()
-            if chunk is None:
-                return
-            data = [chunk]
-
-            # Now consume whatever other data's still buffered.
-            while True:
-                try:
-                    chunk = self._buff.get(block=False)
-                    if chunk is None:
-                        return
-                    data.append(chunk)
-                except queue.Empty:
-                    break
-
-            yield b''.join(data)
-
-def translate(text, source="ja", target="en"):
-    URL="https://script.google.com/macros/s/AKfycbzbGAw0pHReRyBeLH1uKH_8OmLTLOY95mLTvuQVH6ZUeOAa-b_a/exec"
-    URL += "?text=" + text
-    URL += "&source=" + source + "&target=" + target
-
-    res = requests.get(URL).json()
-
-    return res["text"]
-
-def send_zoom(text, seq):
-    API_URL = "https://us04wmcc.zoom.us/closedcaption?id=74300815564&ns=S29taW5hbWkgWXVzdWtlLidzIFpvb20gTWVldGlu&expire=86400&sparams=id%2Cns%2Cexpire&signature=WZtb-Pg9PGWWXU7yqQqryjJbia6raDEyBqh8RoK-bKA.EwEAAAFz3JQcJwABUYAYL01FQmhvNWlxUHpsaHRXT0srT2RLdz09QHhoRGJjbER0dzJLRjZjcVVPcEhEUzdFZitlaGl0U053eTRVS0oxTS9DbW5WODVkNy9rcHZQN0FpNlo2UlBPSXo"
-    API_URL += "&seq={}".format(seq)
-    API_URL += "&lang=en-US"
-
-    headers={'Content-Type': 'text/plain'}
-    res = requests.post(API_URL, text.encode("utf-8"), headers=headers)
-    
-    return res
     
 
-def listen_print_loop(responses):
+def listen_print_loop(URL, responses):
     """Iterates through server responses and prints them.
 
     The responses passed is a generator that will block until a response
@@ -154,7 +74,7 @@ def listen_print_loop(responses):
             
             translated_text = translate(text)
             print("Translated: ", translated_text)
-            print("Zoom response: ", send_zoom(translated_text, seq))
+            print("Zoom response: ", send_zoom(URL, translated_text, seq))
             
             seq += 1
 
@@ -167,6 +87,13 @@ def listen_print_loop(responses):
             num_chars_printed = 0
 
 def main():
+    if len(sys.argv) < 2:
+        print("Input some Zoom API TOKEN")
+        sys.exit(0)
+    
+    # Zoom API TOKEN
+    URL = sys.argv[1]
+
     # See http://g.co/cloud/speech/docs/languages
     # for a list of supported languages.
     language_code = 'ja-JP'  # a BCP-47 language tag
@@ -188,9 +115,8 @@ def main():
         responses = client.streaming_recognize(streaming_config, requests)
 
         # Now, put the transcription responses to use.
-        listen_print_loop(responses)
+        listen_print_loop(URL, responses)
 
-        print("Hogeeeeeeee: ", responses)
-
+        
 if __name__ == '__main__':
     main()
