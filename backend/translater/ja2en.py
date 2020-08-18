@@ -3,9 +3,9 @@ from __future__ import division
 import re
 import sys
 
-from google.cloud import speech
-from google.cloud.speech import enums
-from google.cloud.speech import types
+from google.cloud import speech_v1p1beta1
+from google.cloud.speech_v1p1beta1 import enums
+from google.cloud.speech_v1p1beta1 import types
 import pyaudio
 import requests
 
@@ -98,11 +98,19 @@ def main():
     # for a list of supported languages.
     language_code = 'ja-JP'  # a BCP-47 language tag
 
-    client = speech.SpeechClient()
+    # Alternative language codes
+    alternative_language_code_element_0 = "en"
+    alternative_language_codes = [
+        alternative_language_code_element_0,
+    ]
+
+    client = speech_v1p1beta1.SpeechClient()
     config = types.RecognitionConfig(
         encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=RATE,
-        language_code=language_code)
+        language_code=language_code,
+        alternative_language_codes=alternative_language_codes,
+    )
     streaming_config = types.StreamingRecognitionConfig(
         config=config,
         interim_results=True)
