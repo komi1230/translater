@@ -72,7 +72,7 @@ def listen_print_loop(URL, responses):
 
             text += transcript + overwrite_chars
             
-            translated_text = translate(text)
+            translated_text = translate(text, target="en")
             print("Translated: ", translated_text)
             print("Zoom response: ", send_zoom(URL, translated_text, seq))
             
@@ -96,12 +96,14 @@ def main():
 
     # See http://g.co/cloud/speech/docs/languages
     # for a list of supported languages.
-    language_code = 'ja-JP'  # a BCP-47 language tag
+    language_code = 'zh-TW'  # a BCP-47 language tag
 
     # Alternative language codes
     alternative_language_code_element_0 = "en"
+    alternative_language_code_element_1 = "ja"
     alternative_language_codes = [
-        alternative_language_code_element_0,
+        #alternative_language_code_element_0,
+        alternative_language_code_element_1,
     ]
 
     client = speech_v1p1beta1.SpeechClient()
