@@ -96,22 +96,28 @@ def main():
 
     # See http://g.co/cloud/speech/docs/languages
     # for a list of supported languages.
-    language_code = 'zh-TW'  # a BCP-47 language tag
+    language_code = 'ja'  # a BCP-47 language tag
 
     # Alternative language codes
     alternative_language_code_element_0 = "en"
-    alternative_language_code_element_1 = "ja"
+    alternative_language_code_element_1 = "zh-TW"
     alternative_language_codes = [
-        #alternative_language_code_element_0,
+        alternative_language_code_element_0,
         alternative_language_code_element_1,
     ]
 
     client = speech_v1p1beta1.SpeechClient()
+
+    dialization_config = types.SpeakerDiarizationConfig(
+        enable_speaker_diarization=True,
+    )
+    
     config = types.RecognitionConfig(
         encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=RATE,
         language_code=language_code,
         alternative_language_codes=alternative_language_codes,
+        diarization_config=dialization_config,
     )
     streaming_config = types.StreamingRecognitionConfig(
         config=config,
@@ -119,6 +125,7 @@ def main():
 
     with MicrophoneStream(RATE, CHUNK) as stream:
         audio_generator = stream.generator()
+
         requests = (types.StreamingRecognizeRequest(audio_content=content)
                     for content in audio_generator)
 

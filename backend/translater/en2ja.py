@@ -1,19 +1,22 @@
 from __future__ import division
 
+import sys
 import itertools
 
 from google.cloud import mediatranslation as media
 import pyaudio
 
 from microphone import MicrophoneStream
+from send_zoom import send_zoom
 
 # Audio recording parameters
 RATE = 16000
 CHUNK = int(RATE / 10)  # 100ms
 SpeechEventType = media.StreamingTranslateSpeechResponse.SpeechEventType
 
+API_KEY = sys.argv[1]
 
-def listen_print_loop(responses):
+def listen_print_loop(responses, seq):
     """Iterates through server responses and prints them.
 
     The responses passed is a generator that will block until a response
@@ -21,6 +24,7 @@ def listen_print_loop(responses):
     """
     translation = ''
     source = ''
+    
     for response in responses:
         # Once the transcription settles, the response contains the
         # END_OF_SINGLE_UTTERANCE event.
@@ -29,17 +33,20 @@ def listen_print_loop(responses):
 
             print(u'\nFinal translation: {0}'.format(translation))
             print(u'Final recognition result: {0}'.format(source))
+
+            print("Zoom response: ", send_zoom(API_KEY, translation, seq))
+            
             return 0
 
         result = response.result
         translation = result.text_translation_result.translation
         source = result.recognition_result
 
-        print(u'\nPartial translation: {0}'.format(translation))
-        print(u'Partial recognition result: {0}'.format(source))
+        #print(u'\nPartial translation: {0}'.format(translation))
+        #print(u'Partial recognition result: {0}'.format(source))
 
         
-def do_translation_loop():
+def do_translation_loop(seq):
     print('Begin speaking...')
 
     client = media.SpeechTranslationServiceClient()
@@ -69,12 +76,13 @@ def do_translation_loop():
         responses = client.streaming_translate_speech(requests)
 
         # Print the translation responses as they arrive
-        result = listen_print_loop(responses)
+        result = listen_print_loop(responses, seq)
         if result == 0:
             stream.exit()
 
             
 def main():
+    seq = 0
     while True:
         print()
         option = input('Press any key to translate or \'q\' to quit: ')
@@ -82,7 +90,9 @@ def main():
         if option.lower() == 'q':
             break
 
-        do_translation_loop()
+        while True:
+            do_translation_loop(seq)
+            seq += 1
 
         
 if __name__ == '__main__':
