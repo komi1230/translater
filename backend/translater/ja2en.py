@@ -96,7 +96,7 @@ def main():
 
     # See http://g.co/cloud/speech/docs/languages
     # for a list of supported languages.
-    language_code = 'ja'  # a BCP-47 language tag
+    language_code = 'ja-JP'  # a BCP-47 language tag
 
     # Alternative language codes
     alternative_language_code_element_0 = "en"
@@ -116,7 +116,7 @@ def main():
         encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=RATE,
         language_code=language_code,
-        alternative_language_codes=alternative_language_codes,
+        #alternative_language_codes=alternative_language_codes,
         diarization_config=dialization_config,
     )
     streaming_config = types.StreamingRecognitionConfig(
