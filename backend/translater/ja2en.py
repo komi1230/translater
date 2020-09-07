@@ -6,8 +6,6 @@ import sys
 from google.cloud import speech_v1p1beta1
 from google.cloud.speech_v1p1beta1 import enums
 from google.cloud.speech_v1p1beta1 import types
-import pyaudio
-import requests
 
 from microphone import MicrophoneStream
 from send_zoom import send_zoom
@@ -16,7 +14,7 @@ from translate import translate
 # Audio recording parameters
 RATE = 16000
 CHUNK = int(RATE / 10)  # 100ms
-    
+
 
 def listen_print_loop(URL, responses):
     """Iterates through server responses and prints them.
@@ -71,11 +69,11 @@ def listen_print_loop(URL, responses):
             print(transcript + overwrite_chars)
 
             text += transcript + overwrite_chars
-            
+
             translated_text = translate(text, target="en")
             print("Translated: ", translated_text)
             print("Zoom response: ", send_zoom(URL, translated_text, seq))
-            
+
             seq += 1
 
             # Exit recognition if any of the transcribed phrases could be
@@ -86,6 +84,7 @@ def listen_print_loop(URL, responses):
 
             num_chars_printed = 0
 
+            
 def main():
     if len(sys.argv) < 2:
         print("Input some Zoom API TOKEN")
@@ -116,7 +115,7 @@ def main():
         encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=RATE,
         language_code=language_code,
-        #alternative_language_codes=alternative_language_codes,
+        # alternative_language_codes=alternative_language_codes,
         diarization_config=dialization_config,
     )
     streaming_config = types.StreamingRecognitionConfig(
@@ -134,6 +133,6 @@ def main():
         # Now, put the transcription responses to use.
         listen_print_loop(URL, responses)
 
-        
+
 if __name__ == '__main__':
     main()
