@@ -2,6 +2,7 @@ from __future__ import division
 
 import re
 import sys
+import time
 
 from google.cloud import speech_v1p1beta1
 from google.cloud.speech_v1p1beta1 import enums
@@ -14,6 +15,7 @@ from translate import translate
 # Audio recording parameters
 RATE = 16000
 CHUNK = int(RATE / 10)  # 100ms
+DURATION = 5
 
 
 def listen_print_loop(URL, responses):
@@ -33,6 +35,7 @@ def listen_print_loop(URL, responses):
     """
     num_chars_printed = 0
     seq = 0
+    start = time.time()
     for response in responses:
         if not response.results:
             continue
@@ -58,8 +61,17 @@ def listen_print_loop(URL, responses):
         overwrite_chars = ' ' * (num_chars_printed - len(transcript))
 
         if not result.is_final:
-            sys.stdout.write(transcript + overwrite_chars + '\r')
-            sys.stdout.flush()
+            # sys.stdout.write(transcript + overwrite_chars + '\r')
+            # sys.stdout.flush()
+
+            if time.time() - start > DURATION:
+                translated_text = translate(transcript, target="en")
+                print("Translated: ", translated_text)
+                print("Zoom response: ", send_zoom(URL, translated_text, seq))
+                seq += 1
+                start = time.time()
+                
+            print(time.time() - start, transcript)
 
             text += transcript + overwrite_chars
 
@@ -84,12 +96,12 @@ def listen_print_loop(URL, responses):
 
             num_chars_printed = 0
 
-            
+
 def main():
     if len(sys.argv) < 2:
         print("Input some Zoom API TOKEN")
         sys.exit(0)
-    
+
     # Zoom API TOKEN
     URL = sys.argv[1]
 
@@ -110,7 +122,7 @@ def main():
     dialization_config = types.SpeakerDiarizationConfig(
         enable_speaker_diarization=True,
     )
-    
+
     config = types.RecognitionConfig(
         encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=RATE,
